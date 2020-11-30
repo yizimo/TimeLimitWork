@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zimo.demo.mybatis.dao.UserMapper">
+    <resultMap type="com.zimo.demo.bean.User" id="userPerMap" >
+        <id property="id" column="id" />
+        <result property="username" column="username" />
+        <result property="password" column="password" />
+        <association property="per" javaType="com.zimo.demo.bean.Per">
+            <id property="id" column="p_id" />
+            <result property="name" column="name" />
+        </association>
+    </resultMap>
+<!--  User findUserPer(Integer id); -->
+    <select id="findUserPer" resultMap="userPerMap">
+        select u.id id, username, password, p.name, p.id p_id from user u
+            join user_type ut on u.id = ut.user_id
+            join per p on ut.per_id = p.id
+        where u.id = #{id};
+    </select>
+</mapper>
