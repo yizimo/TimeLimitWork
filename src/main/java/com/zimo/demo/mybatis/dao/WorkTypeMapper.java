@@ -14,4 +14,9 @@ public interface WorkTypeMapper extends TkMapper<WorkType> {
 
     // 作业开始
     boolean updateWorkByWorkId(Integer workId);
+
+    boolean updateWorkByEndTime(Integer workId);
+
+    WorkType findByWorkIdAndStuId(@Param("workId") Integer workId,
+                                  @Param("stuId") Integer stuId);
 }

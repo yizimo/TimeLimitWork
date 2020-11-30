@@ -11,4 +11,14 @@
     <update id="updateWorkByWorkId">
         update work_type set `type` = 1 where work_id = #{workId}
     </update>
+
+    <update id="updateWorkByEndTime">
+        update work_type set `type` = 3 where work_id = #{workId} and `type` = 1
+    </update>
+
+    <!-- WorkType findByWorkIdAndStuId(@Param("workId") Integer workId,
+                                  @Param("stuId") Integer stuId); -->
+    <select id="findByWorkIdAndStuId" >
+        select * from work_type where work_id = #{workId} and stu_id = #{stuId}
+    </select>
 </mapper>

@@ -5,6 +5,7 @@ import com.zimo.demo.exception.CommonEnum;
 import com.zimo.demo.exception.ZimoException;
 import com.zimo.demo.mybatis.dao.*;
 import com.zimo.demo.util.Msg;
+import com.zimo.demo.util.RedisUtil;
 import net.bytebuddy.implementation.bytecode.Throw;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,9 @@ public class WorkService {
     @Autowired
     WorkTimeLimitMapper workTimeLimitMapper;
 
+    @Autowired
+    RedisUtil redisUtil;
+
     /**
      * 插入作业
      * @param receive
@@ -53,7 +57,9 @@ public class WorkService {
         WorkStart workStart = new WorkStart();
         workStart.setStartTime(work.getStartTime());
         workStart.setWorkId(work.getId());
+        workStart.setStartTimeLong(workStart.getStartTime().getTime());
         workStartMapper.insert(workStart);
+        JonStartRun.queue.put(workStart);
         logger.info("workStart:" + workStart.getId());
         TaskResource taskResource = new TaskResource();
         taskResource.setTaskInfo(receive.getTaskResourceInfo());
@@ -102,7 +108,7 @@ public class WorkService {
     }
 
     /**
-     * 备注添加
+     * 备注添加 -- 作业完成
      * @param taskResourceType
      * @return
      */
@@ -155,9 +161,59 @@ public class WorkService {
         } else {
             workTimeLimit.setEndTime(new Date(startTime + work.getTimeLong()));
         }
+        // 添加redis 的zset 中
+        workTimeLimit.setEndTimeLong(workTimeLimit.getEndTime().getTime());
+        redisUtil.zsetAdd("delayQueue",workTimeLimit.getWorkId()+"&" + workTimeLimit.getStuId(),workTimeLimit.getEndTimeLong());
         workTimeLimitMapper.insert(workTimeLimit);
         logger.info("限时任务插入成功");
         return Msg.success().add("info","修改成功");
+    }
+
+    /**
+     * 完成作业
+     */
+    public Msg insertTaskTypeAndUpdateWorkType(Integer taskResourceId,
+                                               Integer workId, String info,
+                                               Date endTime, Integer stuId) {
+        // 插入资料记录
+        Msg msg = insertTaskType(taskResourceId, stuId, info);
+        if(msg.getCode() == 100) {
+            logger.info("资料记录插入成功");
+        }
+        // 修改状态
+        Work work = workMapper.selectByPrimaryKey(workId);
+        // 不需要限时完成
+        if(work.getTimeLong() == null || work.getTimeLong() == 0) {
+            workTypeMapper.updateWorkTypeById(workId,stuId,2);
+        } else {
+            WorkType workType = workTypeMapper.findByWorkIdAndStuId(workId, stuId);
+            long endTimeByWorkType = workType.getStartTime().getTime() + work.getTimeLong();
+            endTimeByWorkType = Math.min(endTimeByWorkType,work.getEndTime().getTime());
+            if(endTimeByWorkType + 1000 > endTime.getTime()) {
+                // 按时完成
+                workTypeMapper.updateWorkTypeById(workId,stuId,2);
+            }  else {
+                return Msg.fail().add("info","提交失败");
+            }
+        }
+        return Msg.success();
+    }
+
+    /**
+     * 备注
+     * @param taskResourceId
+     * @param stuId
+     * @param info
+     * @return
+     */
+    public Msg insertTaskType(Integer taskResourceId,
+                              Integer stuId, String info) {
+        TaskResourceType taskResourceType = new TaskResourceType();
+        taskResourceType.setInfo(info);
+        taskResourceType.setStuId(stuId);
+        taskResourceType.setTaskResourceId(taskResourceId);
+        taskResourceTypeMapper.insert(taskResourceType);
+        return Msg.success();
     }
 
 }

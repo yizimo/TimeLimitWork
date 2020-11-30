@@ -66,7 +66,7 @@ public class WorkEnd implements Serializable, Delayed {
     @Override
     public int compareTo(Delayed o) {
         WorkEnd workEnd = (WorkEnd) o;
-        long diff = this.endTimeLong - workEnd.getEndTimeLong();
+        long diff = this.endTimeLong - workEnd.getEndTimeLong() + 1000;
         if(diff <= 0) {
             return -1;
         } else {

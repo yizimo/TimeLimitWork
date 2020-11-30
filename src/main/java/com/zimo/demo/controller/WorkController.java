@@ -2,6 +2,7 @@ package com.zimo.demo.controller;
 
 import com.zimo.demo.bean.Receive;
 import com.zimo.demo.bean.TaskResourceType;
+import com.zimo.demo.bean.TaskTypeInfo;
 import com.zimo.demo.bean.Work;
 import com.zimo.demo.exception.CommonEnum;
 import com.zimo.demo.service.WorkService;
@@ -65,18 +66,20 @@ public class WorkController {
     }
 
     /**
-     * 添加备注
+     * 添加备注 --- 作业完成提交
      * @param taskResourceType
      * @return
      */
     @PostMapping("/stu")
-    public ResultBody insertTaskInfo(@RequestBody TaskResourceType taskResourceType) {
-        logger.info("添加备注：" + taskResourceType.toString());
-        Msg msg = workService.insertTaskType(taskResourceType);
-        if(200 == msg.getCode()) {
-            return ResultBody.error("-1","数据缺失");
+    public ResultBody insertTaskInfo(@RequestBody TaskTypeInfo taskResourceType) {
+        logger.info("完成作业" + taskResourceType.toString());
+        Msg msg = workService.insertTaskTypeAndUpdateWorkType(taskResourceType.getTaskResourceTypeId(),
+                taskResourceType.getWorkId(), taskResourceType.getInfo(),
+                taskResourceType.getEndTime(), taskResourceType.getStuId());
+        logger.info(msg.toString());
+        if(msg.getCode() == 200) {
+            return ResultBody.error("-1", (String) msg.getExtend().get("info"));
         }
-        logger.info("添加备注：" + msg.toString());
         return ResultBody.success(null);
     }
 
@@ -93,6 +96,12 @@ public class WorkController {
             return ResultBody.error("-1","数据缺失");
         }
        return ResultBody.success(null);
+    }
+
+    @PutMapping("/stu/end")
+    public ResultBody updateStuWorkType() {
+
+        return ResultBody.success(null);
     }
 
 

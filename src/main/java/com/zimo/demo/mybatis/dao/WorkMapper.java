@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface WorkMapper extends TkMapper<Work> {
 
-    Work getWork(Integer workId);
+
 }
