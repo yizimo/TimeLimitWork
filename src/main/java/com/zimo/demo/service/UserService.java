@@ -66,9 +66,9 @@ public class UserService {
      * @return
      */
     private String userPer(Integer id) {
-        User userPer = userMapper.findUserPer(id);
-        logger.info(userPer.toString());
-        String token = TokenUtils.token(userPer.getUsername(), userPer.getPer().getName());
+        User user = userMapper.findUserPer(id);
+        logger.info(user.toString());
+        String token = TokenUtils.token(user.getUsername(), user.getPer().getName());
         return token;
     }
 

@@ -5,6 +5,7 @@ import com.zimo.demo.bean.TaskResourceType;
 import com.zimo.demo.bean.TaskTypeInfo;
 import com.zimo.demo.bean.Work;
 import com.zimo.demo.exception.CommonEnum;
+import com.zimo.demo.inter.Token;
 import com.zimo.demo.service.WorkService;
 import com.zimo.demo.util.Msg;
 import com.zimo.demo.util.ResultBody;
@@ -24,6 +25,7 @@ import java.util.List;
 
 @RequestMapping("work")
 @RestController
+
 public class WorkController {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkController.class);
@@ -37,6 +39,7 @@ public class WorkController {
      * @return
      */
     @PostMapping
+    @Token
     public ResultBody insertWork(@RequestBody Receive receive) {
         if(receive.getWork().getStartTime() == null) {
             return ResultBody.error("-1","开始时间不能为空");

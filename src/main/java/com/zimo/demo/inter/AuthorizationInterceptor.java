@@ -32,13 +32,7 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        response.setHeader("Access-Control-Allow-Methods","POST, GET, OPTIONS, DELETE");
-        response.setHeader("Access-Control-Max-Age","3600");
-        response.setHeader("Access-Control-Allow-Credentials","true");
-        response.setHeader("Access-Control-Allow-Headers","x-requested-with,X-Nideshop-Token,X-URL-PATH");
-        response.setHeader("Access-Control-Allow-Origin",request.getHeader("Origin"));
-
-        String token = request.getHeader("token");
+              String token = request.getHeader("token");
 
         if(!(handler instanceof HandlerMethod)) {
             return true;
@@ -50,7 +44,7 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
             if(annotation != null) {
                 logger.info("token:" + token);
                 if(token == null || "".equals(token)) {
-                    throw new ZimoException("-1","不存在token");
+                    throw new ZimoException("-1","请登录");
                 }
                 // 校验token 正确性
                 String username = TokenUtils.getInfo(token, "username");
@@ -64,7 +58,17 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
                 if(!token.equals(value)) {
                     throw new ZimoException("-1","token失效");
                 }
-                return true;
+                String perName = TokenUtils.getInfo(token, "perName");
+                String validate = annotation.validate();
+                if(validate.equals("管理员") && perName.equals("管理员")) {
+                    return true;
+                }
+                if(validate.equals("教师")) {
+                    if(perName.equals("管理员") || perName.equals("教师")) {
+                        return true;
+                    }
+                }
+                throw new ZimoException("-1","权限不够");
             }
         }
         return true;

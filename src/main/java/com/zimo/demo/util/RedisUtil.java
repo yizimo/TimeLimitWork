@@ -37,7 +37,7 @@ public class RedisUtil {
     }
 
     public Object get(String key) {
-        return redisTemplate.boundValueOps(key).get();
+        return redisTemplate.opsForValue().get(key);
     }
 
     /**
