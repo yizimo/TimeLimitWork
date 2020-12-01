@@ -25,7 +25,6 @@ import java.util.List;
 
 @RequestMapping("work")
 @RestController
-
 public class WorkController {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkController.class);

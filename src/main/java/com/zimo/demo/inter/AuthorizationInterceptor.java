@@ -68,6 +68,11 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
                         return true;
                     }
                 }
+                if(validate.equals("同学")) {
+                    if(perName.equals("管理员") || perName.equals("教师") || perName.equals("同学")) {
+                        return true;
+                    }
+                }
                 throw new ZimoException("-1","权限不够");
             }
         }

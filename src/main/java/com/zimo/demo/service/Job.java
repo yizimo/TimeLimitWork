@@ -138,7 +138,7 @@ public class Job {
                         String value = (String) tuple.getValue();
                         String[] split = value.split("&");
                         logger.info("限时任务，workId：" + value);
-                        workTypeMapper.updateWorkTypeById(Integer.valueOf(split[0]),Integer.valueOf(split[1]),3);
+                        workTypeMapper.updateWorkTypeById(Integer.valueOf(split[0]),Integer.valueOf(split[1]),3,null);
                         list.add(value);
                     }
                     // 删除表记录
