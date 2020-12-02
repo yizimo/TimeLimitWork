@@ -24,11 +24,5 @@ public class DemoApplication extends SpringBootServletInitializer {
         return builder.sources(DemoApplication.class);
     }
 
-    @Bean
-    public TaskScheduler taskScheduler() {
-        ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
-        taskScheduler.setPoolSize(50);
-        return taskScheduler;
-    }
 
 }

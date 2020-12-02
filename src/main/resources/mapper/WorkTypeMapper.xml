@@ -4,11 +4,11 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.zimo.demo.mybatis.dao.WorkTypeMapper">
    <update id="updateWorkTypeById" >
-       update work_type set `type` = #{type}
-        <if test="endTime != nul" >
-            , endTime = #{endTime}
-        </if>
-       where `type` = 1 and  work_id = #{workId} and stu_id = #{stuId}
+       update work_type set `type` = #{type} , end_time = #{endTime}  where `type` = 1 and  work_id = #{workId} and stu_id = #{stuId}
+   </update>
+
+    <update id="updateWorkTypeByIdL" >
+       update work_type set `type` = #{type} , end_time = #{endTime}  where  work_id = #{workId} and stu_id = #{stuId}
    </update>
 
     <update id="updateWorkByWorkId">
@@ -21,7 +21,7 @@
 
     <!-- WorkType findByWorkIdAndStuId(@Param("workId") Integer workId,
                                   @Param("stuId") Integer stuId); -->
-    <select id="findListByOtherType" >
+    <select id="findByWorkIdAndStuId" resultType="com.zimo.demo.bean.WorkType">
         select * from work_type where work_id = #{workId} and stu_id = #{stuId}
     </select>
 </mapper>

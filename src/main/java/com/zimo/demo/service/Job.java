@@ -18,10 +18,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import tk.mybatis.mapper.entity.Example;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.DelayQueue;
 
 @Component
@@ -125,20 +122,18 @@ public class Job {
                 }
             } else {
                 Long time = new Date().getTime();
-                Set<ZSetOperations.TypedTuple<Object>> zset
-                        = redisUtil.getZset(key,time);
+               Set zset = redisUtil.getZset(key,time);
                 if(zset.size() == 0) {
                     logger.info("zset 中没有记录");
                 } else {
                     // 修改状态
-                    ZSetOperations.TypedTuple<Object>[] tuples
-                            = (ZSetOperations.TypedTuple<Object>[]) zset.toArray();
+                    logger.info("zset:" + zset);
                     List<String> list = new ArrayList<>();
-                    for (ZSetOperations.TypedTuple<Object> tuple : tuples) {
-                        String value = (String) tuple.getValue();
+                    for (Object o : zset) {
+                        String value = o.toString();
                         String[] split = value.split("&");
                         logger.info("限时任务，workId：" + value);
-                        workTypeMapper.updateWorkTypeById(Integer.valueOf(split[0]),Integer.valueOf(split[1]),3,null);
+                        workTypeMapper.updateWorkTypeById(Integer.valueOf(split[0]),Integer.valueOf(split[1]),3,new Date());
                         list.add(value);
                     }
                     // 删除表记录
@@ -152,7 +147,7 @@ public class Job {
                 }
             }
         } catch (Exception e) {
-            logger.info(e.getMessage());
+            logger.info("发生了异常" + e.getMessage());
         }
 
     }

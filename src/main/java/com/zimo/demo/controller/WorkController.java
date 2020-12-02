@@ -1,9 +1,6 @@
 package com.zimo.demo.controller;
 
-import com.zimo.demo.bean.Receive;
-import com.zimo.demo.bean.TaskResourceType;
-import com.zimo.demo.bean.TaskTypeInfo;
-import com.zimo.demo.bean.Work;
+import com.zimo.demo.bean.*;
 import com.zimo.demo.exception.CommonEnum;
 import com.zimo.demo.inter.Token;
 import com.zimo.demo.service.WorkService;
@@ -38,7 +35,6 @@ public class WorkController {
      * @return
      */
     @PostMapping
-    @Token
     public ResultBody insertWork(@RequestBody Receive receive) {
         if(receive.getWork().getStartTime() == null) {
             return ResultBody.error("-1","开始时间不能为空");
@@ -87,13 +83,11 @@ public class WorkController {
 
     /**
      * 开始作业
-     * @param date
-     * @param id
      * @return
      */
     @PutMapping("/stu/start")
-    public ResultBody updateStuTaskStartTime(@RequestParam Date date,@RequestParam Integer id) {
-        Msg msg = workService.updateWorkType(id, date);
+    public ResultBody updateStuTaskStartTime(@RequestBody WorkType workType) {
+        Msg msg = workService.updateWorkType(workType.getId(), workType.getStartTime());
         if(200 == msg.getCode()) {
             return ResultBody.error("-1","数据缺失");
         }

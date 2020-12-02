@@ -57,9 +57,8 @@ public class RedisUtil {
      * @param key
      * @return
      */
-    public Set<ZSetOperations.TypedTuple<Object>> getZset(String key, Long  time) {
-        Set<ZSetOperations.TypedTuple<Object>> set =
-                redisTemplate.opsForZSet().rangeByScore(key, 0, time);
+    public Set getZset(String key, Long  time) {
+        Set set = redisTemplate.opsForZSet().rangeByScore(key, 0, time);
         return set;
     }
 

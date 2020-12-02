@@ -172,6 +172,7 @@ public class WorkService {
     /**
      * 完成作业
      */
+    @Transactional(rollbackFor = Exception.class)
     public Msg insertTaskTypeAndUpdateWorkType(Integer taskResourceId,
                                                Integer workId, String info,
                                                Date endTime, Integer stuId) {
@@ -184,16 +185,21 @@ public class WorkService {
         Work work = workMapper.selectByPrimaryKey(workId);
         // 不需要限时完成
         if(work.getTimeLong() == null || work.getTimeLong() == 0) {
-            workTypeMapper.updateWorkTypeById(workId,stuId,2,endTime);
+            if(work.getEndTime().getTime() + 1000 > endTime.getTime()) {
+                workTypeMapper.updateWorkTypeByIdL(workId,stuId,2,endTime);
+                logger.info("不需要限时完成提交成功");
+            }else {
+                return Msg.success().add("info","已经过期");
+            }
         } else {
             WorkType workType = workTypeMapper.findByWorkIdAndStuId(workId, stuId);
             long endTimeByWorkType = workType.getStartTime().getTime() + work.getTimeLong();
             endTimeByWorkType = Math.min(endTimeByWorkType,work.getEndTime().getTime());
             if(endTimeByWorkType + 1000 > endTime.getTime()) {
                 // 按时完成
-                workTypeMapper.updateWorkTypeById(workId,stuId,2,endTime);
+                workTypeMapper.updateWorkTypeByIdL(workId,stuId,2,endTime);
             }  else {
-                return Msg.fail().add("info","提交失败");
+                return Msg.success().add("info","已经过期");
             }
         }
         return Msg.success();
