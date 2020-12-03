@@ -56,7 +56,7 @@ public class JonStartRun implements ApplicationRunner {
                     List<WorkStart> workStarts = workStartMapper.findListBeforeTom();
                     for(WorkStart workStart: workStarts) {
                         workStart.setStartTimeLong(workStart.getStartTime().getTime());
-                        queue.put(workStart);
+                        queue.offer(workStart);
                     }
                     logger.info(Thread.currentThread().getName() + "加载完毕");
                     flag = true;
@@ -100,7 +100,7 @@ public class JonStartRun implements ApplicationRunner {
                     List<WorkEnd> workEnds = workEndMapper.findListWorkBeforeTom();
                     for (WorkEnd workEnd : workEnds) {
                         workEnd.setEndTimeLong(workEnd.getEndTime().getTime());
-                        workEndDelayQueue.put(workEnd);
+                        workEndDelayQueue.offer(workEnd);
                     }
                     logger.info(Thread.currentThread().getName() + "加载完毕");
                     endFlag = true;
@@ -136,7 +136,7 @@ public class JonStartRun implements ApplicationRunner {
                     List<WorkTimeLimit> workTimeLimits = workTimeLimitMapper.findListBeforeTom();
                     for (WorkTimeLimit workTimeLimit : workTimeLimits) {
                         workTimeLimit.setEndTimeLong(workTimeLimit.getEndTime().getTime());
-                        workTimeLimitDelayQueue.put(workTimeLimit);
+                        workTimeLimitDelayQueue.offer(workTimeLimit);
                     }
                     logger.info(Thread.currentThread().getName() + "加载完毕");
                     limieFlag = true;

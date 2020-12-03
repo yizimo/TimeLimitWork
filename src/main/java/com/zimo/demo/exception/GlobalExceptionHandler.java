@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = NullPointerException.class)
     @ResponseBody
     public ResultBody exceptionHandler(HttpServletRequest request, NullPointerException exception) {
-        logger.error("空指针异常:" + exception.getMessage());
+        logger.error("空指针异常:" + exception);
         return ResultBody.error(CommonEnum.BODY_NOT_MATCH);
     }
 
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = MissingServletRequestParameterException.class)
     @ResponseBody
     public ResultBody exceptionHandler(HttpServletRequest request, MissingServletRequestParameterException exception) {
-        logger.error("请求参数不正确:" + exception.getMessage());
+        logger.error("请求参数不正确:" + exception);
         return ResultBody.error(CommonEnum.BODY_NOT_MATCH);
     }
 
@@ -68,7 +68,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = Exception.class)
     @ResponseBody
     public ResultBody exceptionHandler(HttpServletRequest request, Exception exception) {
-        logger.error("其他异常：" + exception.getMessage());
+        logger.error("其他异常：" + exception);
         return ResultBody.error(CommonEnum.INTERNAL_SERVER_ERROR);
     }
 }

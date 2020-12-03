@@ -62,7 +62,7 @@ public class WorkService {
         workStart.setWorkId(work.getId());
         workStart.setStartTimeLong(workStart.getStartTime().getTime());
         workStartMapper.insert(workStart);
-        JonStartRun.queue.put(workStart);
+        JonStartRun.queue.offer(workStart);
         logger.info("workStart:" + workStart.getId());
         TaskResource taskResource = new TaskResource();
         taskResource.setTaskInfo(receive.getTaskResourceInfo());
@@ -167,7 +167,7 @@ public class WorkService {
         // 添加到queue中
         workTimeLimit.setEndTimeLong(workTimeLimit.getEndTime().getTime());
         workTimeLimitMapper.insert(workTimeLimit);
-        JonStartRun.workTimeLimitDelayQueue.put(workTimeLimit);
+        JonStartRun.workTimeLimitDelayQueue.offer(workTimeLimit);
         logger.info("限时任务插入成功");
         return Msg.success().add("info","修改成功");
     }

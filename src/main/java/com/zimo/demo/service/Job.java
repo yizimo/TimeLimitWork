@@ -118,19 +118,19 @@ public class Job {
         List<WorkStart> workStarts = workStartMapper.findListBeforeTom();
         for(WorkStart workStart: workStarts) {
             workStart.setStartTimeLong(workStart.getStartTime().getTime());
-            JonStartRun.queue.put(workStart);
+            JonStartRun.queue.offer(workStart);
         }
         JonStartRun.workEndDelayQueue.clear();
         List<WorkEnd> workEnds = workEndMapper.findListWorkBeforeTom();
         for (WorkEnd workEnd : workEnds) {
             workEnd.setEndTimeLong(workEnd.getEndTime().getTime());
-            JonStartRun.workEndDelayQueue.put(workEnd);
+            JonStartRun.workEndDelayQueue.offer(workEnd);
         }
         JonStartRun.workTimeLimitDelayQueue.clear();
         List<WorkTimeLimit> workTimeLimits = workTimeLimitMapper.findListBeforeTom();
         for (WorkTimeLimit workTimeLimit : workTimeLimits) {
             workTimeLimit.setEndTimeLong(workTimeLimit.getEndTime().getTime());
-            JonStartRun.workTimeLimitDelayQueue.put(workTimeLimit);
+            JonStartRun.workTimeLimitDelayQueue.offer(workTimeLimit);
         }
 
     }
