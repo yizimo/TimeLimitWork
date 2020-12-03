@@ -4,24 +4,24 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.zimo.demo.mybatis.dao.WorkTypeMapper">
    <update id="updateWorkTypeById" >
-       update work_type set `type` = #{type} , end_time = #{endTime}  where `type` = 1 and  work_id = #{workId} and stu_id = #{stuId}
+       update work_stu_finish set `type` = #{type} , end_time = #{endTime}  where `type` = 1 and  work_id = #{workId} and stu_id = #{stuId}
    </update>
 
     <update id="updateWorkTypeByIdL" >
-       update work_type set `type` = #{type} , end_time = #{endTime}  where  work_id = #{workId} and stu_id = #{stuId}
+       update work_stu_finish set `type` = #{type} , end_time = #{endTime}  where  work_id = #{workId} and stu_id = #{stuId}
    </update>
 
     <update id="updateWorkByWorkId">
-        update work_type set `type` = 1 where work_id = #{workId}
+        update work_stu_finish set `type` = 1 where work_id = #{workId}
     </update>
 
     <update id="updateWorkByEndTime">
-        update work_type set `type` = 3 where work_id = #{workId} and `type` = 1
+        update work_stu_finish set `type` = 3 where work_id = #{workId} and `type` = 1
     </update>
 
     <!-- WorkType findByWorkIdAndStuId(@Param("workId") Integer workId,
                                   @Param("stuId") Integer stuId); -->
     <select id="findByWorkIdAndStuId" resultType="com.zimo.demo.bean.WorkType">
-        select * from work_type where work_id = #{workId} and stu_id = #{stuId}
+        select * from work_stu_finish where work_id = #{workId} and stu_id = #{stuId}
     </select>
 </mapper>

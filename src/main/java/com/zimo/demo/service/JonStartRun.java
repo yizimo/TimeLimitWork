@@ -3,10 +3,8 @@ package com.zimo.demo.service;
 import com.zimo.demo.bean.Work;
 import com.zimo.demo.bean.WorkEnd;
 import com.zimo.demo.bean.WorkStart;
-import com.zimo.demo.mybatis.dao.WorkEndMapper;
-import com.zimo.demo.mybatis.dao.WorkMapper;
-import com.zimo.demo.mybatis.dao.WorkStartMapper;
-import com.zimo.demo.mybatis.dao.WorkTypeMapper;
+import com.zimo.demo.bean.WorkTimeLimit;
+import com.zimo.demo.mybatis.dao.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +27,10 @@ public class JonStartRun implements ApplicationRunner {
     private boolean endFlag = false;
     public static DelayQueue<WorkEnd> workEndDelayQueue = new DelayQueue<>();
 
+
+    private boolean limieFlag = false;
+    public static DelayQueue<WorkTimeLimit> workTimeLimitDelayQueue = new DelayQueue<>();
+
     @Autowired
     WorkStartMapper workStartMapper;
 
@@ -41,6 +43,9 @@ public class JonStartRun implements ApplicationRunner {
     @Autowired
     WorkMapper workMapper;
 
+    @Autowired
+    WorkTimeLimitMapper workTimeLimitMapper;
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
         new Thread(() -> {
@@ -48,7 +53,7 @@ public class JonStartRun implements ApplicationRunner {
                 // 首次加载
                 if(!flag) {
                     logger.info(Thread.currentThread().getName() + "启动加载数据");
-                    List<WorkStart> workStarts = workStartMapper.selectAll();
+                    List<WorkStart> workStarts = workStartMapper.findListBeforeTom();
                     for(WorkStart workStart: workStarts) {
                         workStart.setStartTimeLong(workStart.getStartTime().getTime());
                         queue.put(workStart);
@@ -92,8 +97,7 @@ public class JonStartRun implements ApplicationRunner {
             while(true) {
                 if(!endFlag) {
                     logger.info(Thread.currentThread().getName() + "截止首次加载");
-                    List<WorkEnd> workEnds;
-                    workEnds = workEndMapper.selectAll();
+                    List<WorkEnd> workEnds = workEndMapper.findListWorkBeforeTom();
                     for (WorkEnd workEnd : workEnds) {
                         workEnd.setEndTimeLong(workEnd.getEndTime().getTime());
                         workEndDelayQueue.put(workEnd);
@@ -125,5 +129,40 @@ public class JonStartRun implements ApplicationRunner {
                 }
             }
         },"截止时间线程").start();
+
+        new Thread(() -> {
+            while(true) {
+                if(!limieFlag) {
+                    List<WorkTimeLimit> workTimeLimits = workTimeLimitMapper.findListBeforeTom();
+                    for (WorkTimeLimit workTimeLimit : workTimeLimits) {
+                        workTimeLimit.setEndTimeLong(workTimeLimit.getEndTime().getTime());
+                        workTimeLimitDelayQueue.put(workTimeLimit);
+                    }
+                    logger.info(Thread.currentThread().getName() + "加载完毕");
+                    limieFlag = true;
+                } else {
+                    while(true) {
+                        while(workTimeLimitDelayQueue.size() != 0) {
+                            WorkTimeLimit take = null;
+                            try {
+                                take = workTimeLimitDelayQueue.take();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            workTypeMapper.updateWorkTypeById(take.getWorkId(),take.getStuId(),3,null);
+                            workTimeLimitMapper.deleteByWorkId(take.getWorkId(),take.getStuId());
+                            logger.info("修改，删除执行完毕");
+                        }
+                        logger.info(Thread.currentThread().getName() + "暂时没有限时完成的job");
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                }
+            }
+        },"限时任务线程").start();
     }
 }

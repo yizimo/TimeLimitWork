@@ -2,10 +2,12 @@ package com.zimo.demo.controller;
 
 import com.zimo.demo.bean.*;
 import com.zimo.demo.exception.CommonEnum;
+import com.zimo.demo.inter.AuthorizationInterceptor;
 import com.zimo.demo.inter.Token;
 import com.zimo.demo.service.WorkService;
 import com.zimo.demo.util.Msg;
 import com.zimo.demo.util.ResultBody;
+import com.zimo.demo.util.TokenUtils;
 import org.apache.ibatis.annotations.ResultMap;
 import org.apache.ibatis.annotations.ResultType;
 import org.slf4j.Logger;
@@ -50,11 +52,14 @@ public class WorkController {
     /**
      * 学生获取作业
      * @param workId
-     * @param stuId
      * @return
      */
     @GetMapping("/stu")
-    public ResultBody selectWork(@RequestParam Integer workId, @RequestParam Integer stuId) {
+    @Token(validate = "学生")
+    public ResultBody selectWork(@RequestParam Integer workId) {
+
+        Integer stuId = AuthorizationInterceptor.getUserId();
+        logger.info(stuId+"");
         Msg msg = workService.selectWork(workId, stuId);
         if(200 == msg.getCode()) {
             return ResultBody.success(null);
@@ -73,7 +78,7 @@ public class WorkController {
         logger.info("完成作业" + taskResourceType.toString());
         Msg msg = workService.insertTaskTypeAndUpdateWorkType(taskResourceType.getTaskResourceTypeId(),
                 taskResourceType.getWorkId(), taskResourceType.getInfo(),
-                taskResourceType.getEndTime(), taskResourceType.getStuId());
+                new Date(), taskResourceType.getStuId());
         logger.info(msg.toString());
         if(msg.getCode() == 200) {
             return ResultBody.error("-1", (String) msg.getExtend().get("info"));
@@ -87,7 +92,7 @@ public class WorkController {
      */
     @PutMapping("/stu/start")
     public ResultBody updateStuTaskStartTime(@RequestBody WorkType workType) {
-        Msg msg = workService.updateWorkType(workType.getId(), workType.getStartTime());
+        Msg msg = workService.updateWorkType(workType.getId(), new Date());
         if(200 == msg.getCode()) {
             return ResultBody.error("-1","数据缺失");
         }
@@ -100,6 +105,17 @@ public class WorkController {
         return ResultBody.success(null);
     }
 
+    @GetMapping("/size")
+    @Token(validate = "学生")
+    public ResultBody findListBySizeAndTeaId(@RequestParam("size") int size) {
+        Integer userId = AuthorizationInterceptor.getUserId();
+        return ResultBody.success(workService.findListWorkByPage(size,userId).getExtend());
+    }
 
-
+    @GetMapping("/size/stu")
+    @Token(validate = "学生")
+    public ResultBody findListBySizeAndStuId(@RequestParam("size") int size) {
+        Integer userId = AuthorizationInterceptor.getUserId();
+        return ResultBody.success(workService.findListWorkByPageAndStuId(size,userId).getExtend());
+    }
 }

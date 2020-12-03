@@ -2,9 +2,11 @@ package com.zimo.demo.service;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.zimo.demo.bean.WorkEnd;
 import com.zimo.demo.bean.WorkStart;
 import com.zimo.demo.bean.WorkTimeLimit;
 import com.zimo.demo.bean.WorkType;
+import com.zimo.demo.mybatis.dao.WorkEndMapper;
 import com.zimo.demo.mybatis.dao.WorkStartMapper;
 import com.zimo.demo.mybatis.dao.WorkTimeLimitMapper;
 import com.zimo.demo.mybatis.dao.WorkTypeMapper;
@@ -38,6 +40,9 @@ public class Job {
 
     @Autowired
     WorkTimeLimitMapper workTimeLimitMapper;
+
+    @Autowired
+    WorkEndMapper workEndMapper;
 
 
 //    /**
@@ -103,51 +108,29 @@ public class Job {
 //    }
 //
     /**
-     * 通过zset 完成限时任务
+     * 每天凌晨1点 清空queue ，重新扫表
      */
-    @Scheduled(cron = "0/1 * * * * ?")
+    @Scheduled(cron = "0 0 1 * * ?")
     public void zset() {
-        String key = "delayQueue";
-        // 首次加载
-        try {
-            if(redisUtil.getZsetLong(key) == 0) {
-                List<WorkTimeLimit> workTimeLimits = workTimeLimitMapper.selectAll();
-                if(workTimeLimits.size() > 0) {
-                    for (WorkTimeLimit workTimeLimit : workTimeLimits) {
-                        workTimeLimit.setEndTimeLong(workTimeLimit.getEndTime().getTime());
-                        redisUtil.zsetAdd(key,workTimeLimit.getWorkId()+"&" + workTimeLimit.getStuId(),workTimeLimit.getEndTimeLong());
-                    }
-                } else {
-                    logger.info("没有限时完成作业的任务");
-                }
-            } else {
-                Long time = new Date().getTime();
-               Set zset = redisUtil.getZset(key,time);
-                if(zset.size() == 0) {
-                    logger.info("zset 中没有记录");
-                } else {
-                    // 修改状态
-                    logger.info("zset:" + zset);
-                    List<String> list = new ArrayList<>();
-                    for (Object o : zset) {
-                        String value = o.toString();
-                        String[] split = value.split("&");
-                        logger.info("限时任务，workId：" + value);
-                        workTypeMapper.updateWorkTypeById(Integer.valueOf(split[0]),Integer.valueOf(split[1]),3,new Date());
-                        list.add(value);
-                    }
-                    // 删除表记录
-                    for(String str : list) {
-                        String[] split = str.split("&");
-                        workTimeLimitMapper.deleteByWorkId(Integer.valueOf(split[0]),Integer.valueOf(split[1]));
-                        logger.info("限时任务删除，workId & stuId：" + str);
-                    }
-                    // 删除zset
-                    redisUtil.zsetRemove(key,time);
-                }
-            }
-        } catch (Exception e) {
-            logger.info("发生了异常" + e.getMessage());
+        // queue 清空
+        JonStartRun.queue.clear();
+        // 补充数据
+        List<WorkStart> workStarts = workStartMapper.findListBeforeTom();
+        for(WorkStart workStart: workStarts) {
+            workStart.setStartTimeLong(workStart.getStartTime().getTime());
+            JonStartRun.queue.put(workStart);
+        }
+        JonStartRun.workEndDelayQueue.clear();
+        List<WorkEnd> workEnds = workEndMapper.findListWorkBeforeTom();
+        for (WorkEnd workEnd : workEnds) {
+            workEnd.setEndTimeLong(workEnd.getEndTime().getTime());
+            JonStartRun.workEndDelayQueue.put(workEnd);
+        }
+        JonStartRun.workTimeLimitDelayQueue.clear();
+        List<WorkTimeLimit> workTimeLimits = workTimeLimitMapper.findListBeforeTom();
+        for (WorkTimeLimit workTimeLimit : workTimeLimits) {
+            workTimeLimit.setEndTimeLong(workTimeLimit.getEndTime().getTime());
+            JonStartRun.workTimeLimitDelayQueue.put(workTimeLimit);
         }
 
     }

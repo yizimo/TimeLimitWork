@@ -8,8 +8,10 @@ import javax.persistence.Id;
 import javax.persistence.Transient;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
 
-public class WorkTimeLimit implements Serializable {
+public class WorkTimeLimit implements Serializable, Delayed {
 
     @Id
     @Column(name = "id")
@@ -72,4 +74,21 @@ public class WorkTimeLimit implements Serializable {
                 ", stuId=" + stuId +
                 '}';
     }
+
+    @Override
+    public long getDelay(TimeUnit unit) {
+        return endTimeLong - new Date().getTime();
+    }
+
+    @Override
+    public int compareTo(Delayed o) {
+        WorkTimeLimit workTimeLimit = (WorkTimeLimit) o;
+        long diff = this.endTimeLong - workTimeLimit.getEndTimeLong() + 1000;
+        if(diff <= 0) {
+            return -1;
+        } else {
+            return 1;
+        }
+    }
+
 }

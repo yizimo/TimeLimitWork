@@ -5,10 +5,12 @@ import tk.mybatis.mapper.annotation.KeySql;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
+import javax.persistence.Table;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+@Table(name = "work_stu_finish")
 public class WorkType implements Serializable {
 
     @Id

@@ -17,3 +17,8 @@ spring:
   redis:
     host: 127.0.0.1
     port: 6379
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+  params: count=countSql

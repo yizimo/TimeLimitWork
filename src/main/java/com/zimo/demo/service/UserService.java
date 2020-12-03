@@ -53,7 +53,7 @@ public class UserService {
         if(user != null) {
             if(password.equals(user.getPassword())) {
                 token = userPer(user.getId());
-                redisUtil.set(username,token);
+                redisUtil.set(user.getId()+"",token);
                 return Msg.success().add("token",token);
             }
         }
@@ -68,7 +68,7 @@ public class UserService {
     private String userPer(Integer id) {
         User user = userMapper.findUserPer(id);
         logger.info(user.toString());
-        String token = TokenUtils.token(user.getUsername(), user.getPer().getName());
+        String token = TokenUtils.token(user.getId(), user.getPer().getName());
         return token;
     }
 

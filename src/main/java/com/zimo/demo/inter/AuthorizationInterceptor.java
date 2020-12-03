@@ -30,6 +30,8 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
     @Autowired
     RedisUtil redisUtil;
 
+    private static final ThreadLocal<Integer> t1 = new ThreadLocal<>();
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
               String token = request.getHeader("token");
@@ -48,6 +50,7 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
                 }
                 // 校验token 正确性
                 String username = TokenUtils.getInfo(token, "username");
+
                 if("" == username)  {
                     throw new ZimoException("-1","token校验失败");
                 }
@@ -58,18 +61,20 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
                 if(!token.equals(value)) {
                     throw new ZimoException("-1","token失效");
                 }
+                t1.set(Integer.valueOf(username));
                 String perName = TokenUtils.getInfo(token, "perName");
                 String validate = annotation.validate();
+                logger.info("用户的权限：" + perName);
                 if(validate.equals("管理员") && perName.equals("管理员")) {
                     return true;
                 }
-                if(validate.equals("教师")) {
-                    if(perName.equals("管理员") || perName.equals("教师")) {
+                if(validate.equals("老师")) {
+                    if(perName.equals("管理员") || perName.equals("老师")) {
                         return true;
                     }
                 }
-                if(validate.equals("同学")) {
-                    if(perName.equals("管理员") || perName.equals("教师") || perName.equals("同学")) {
+                if(validate.equals("学生")) {
+                    if(perName.equals("管理员") || perName.equals("老师") || perName.equals("学生")) {
                         return true;
                     }
                 }
@@ -90,6 +95,11 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
     public void afterCompletion(HttpServletRequest httpServletRequest,
                                 HttpServletResponse httpServletResponse,
                                 Object o, Exception e) throws Exception {
+        t1.remove();
+    }
+
+    public static Integer  getUserId() {
+        return t1.get();
     }
 
 }

@@ -1,10 +1,13 @@
 package com.zimo.demo.service;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.zimo.demo.bean.*;
 import com.zimo.demo.exception.CommonEnum;
 import com.zimo.demo.exception.ZimoException;
 import com.zimo.demo.mybatis.dao.*;
 import com.zimo.demo.util.Msg;
+import com.zimo.demo.util.PageUtils;
 import com.zimo.demo.util.RedisUtil;
 import net.bytebuddy.implementation.bytecode.Throw;
 import org.slf4j.Logger;
@@ -137,9 +140,9 @@ public class WorkService {
         WorkType workType = new WorkType();
         workType.setStartTime(date);
         Example example = new Example(WorkType.class);
-        example.createCriteria().andEqualTo("id",id);
-        workTypeMapper.updateByExampleSelective(workType,example);
-
+        example.createCriteria().andEqualTo("id",id).andEqualTo("type",1);
+        int i = workTypeMapper.updateByExampleSelective(workType, example);
+        logger.info("更新行数：" + i);
         // 查找到作业内容
         WorkType workType1 = workTypeMapper.selectByPrimaryKey(id);
         Work work = workMapper.selectByPrimaryKey(workType1.getWorkId());
@@ -161,10 +164,10 @@ public class WorkService {
         } else {
             workTimeLimit.setEndTime(new Date(startTime + work.getTimeLong()));
         }
-        // 添加redis 的zset 中
+        // 添加到queue中
         workTimeLimit.setEndTimeLong(workTimeLimit.getEndTime().getTime());
-        redisUtil.zsetAdd("delayQueue",workTimeLimit.getWorkId()+"&" + workTimeLimit.getStuId(),workTimeLimit.getEndTimeLong());
         workTimeLimitMapper.insert(workTimeLimit);
+        JonStartRun.workTimeLimitDelayQueue.put(workTimeLimit);
         logger.info("限时任务插入成功");
         return Msg.success().add("info","修改成功");
     }
@@ -220,6 +223,46 @@ public class WorkService {
         taskResourceType.setTaskResourceId(taskResourceId);
         taskResourceTypeMapper.insert(taskResourceType);
         return Msg.success();
+    }
+
+    /**
+     * 老师分页查询
+     * @param size
+     * @return
+     */
+    public Msg findListWorkByPage(int size, Integer teaId) {
+        PageHelper.startPage(size, 10);
+        Example example = new Example(Work.class);
+        example.createCriteria().andEqualTo("teaId",teaId);
+        List<Work> works = workMapper.selectByExample(example);
+        logger.info("works size is " + works.size());
+        PageInfo<Work> pageInfo = new PageInfo<>(works);
+        return Msg.success().add("pageResult", PageUtils.getPageResult(pageInfo));
+    }
+
+    /**
+     * 学生分页查询
+     * @param size
+     * @param stuId
+     * @return
+     */
+    public Msg findListWorkByPageAndStuId(int size, Integer stuId) {
+        PageHelper.startPage(size,10);
+        Example example = new Example(WorkType.class);
+        example.createCriteria().andEqualTo("stuId",stuId);
+        List<WorkType> workTypes = workTypeMapper.selectByExample(example);
+        PageInfo<WorkType> pageInfo = new PageInfo<>(workTypes);
+        List<WorkType> list = pageInfo.getList();
+        for (WorkType workType : list) {
+            Work work = workMapper.selectByPrimaryKey(workType.getWorkId());
+            workType.setWork(work);
+            Example example1 = new Example(TaskResource.class);
+            example1.createCriteria().andEqualTo("workId",workType.getWorkId());
+            List<TaskResource> taskResources = taskResourceMapper.selectByExample(example1);
+            workType.setTaskResourceList(taskResources);
+        }
+        pageInfo.setList(list);
+        return Msg.success().add("result",PageUtils.getPageResult(pageInfo));
     }
 
 }
