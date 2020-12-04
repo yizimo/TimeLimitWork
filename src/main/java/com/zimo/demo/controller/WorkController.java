@@ -107,14 +107,14 @@ public class WorkController {
 
     @GetMapping("/size")
     @Token(validate = "学生")
-    public ResultBody findListBySizeAndTeaId(@RequestParam("size") int size) {
+    public ResultBody findListBySizeAndTeaId(@RequestParam("page") int size) {
         Integer userId = AuthorizationInterceptor.getUserId();
         return ResultBody.success(workService.findListWorkByPage(size,userId).getExtend());
     }
 
     @GetMapping("/size/stu")
     @Token(validate = "学生")
-    public ResultBody findListBySizeAndStuId(@RequestParam("size") int size) {
+    public ResultBody findListBySizeAndStuId(@RequestParam("page") int size) {
         Integer userId = AuthorizationInterceptor.getUserId();
         return ResultBody.success(workService.findListWorkByPageAndStuId(size,userId).getExtend());
     }

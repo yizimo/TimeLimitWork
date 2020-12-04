@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 
 @Repository
@@ -15,6 +16,7 @@ public interface WorkTimeLimitMapper extends TkMapper<WorkTimeLimit> {
     @Delete("delete from work_time_limit where work_id = #{workId} and stu_id = #{stuId}")
     void deleteByWorkId(@Param("workId") Integer workId, @Param("stuId") Integer stuId);
 
-    @Select("select * from work_time_limit where end_time < DATE_SUB(curdate(),INTERVAL -1 DAY) ")
-    List<WorkTimeLimit> findListBeforeTom();
+    @Select("select * from work_time_limit where end_time < #{date} ")
+    List<WorkTimeLimit> findListBeforeTom(Date date);
+
 }

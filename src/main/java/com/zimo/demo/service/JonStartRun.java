@@ -1,10 +1,8 @@
 package com.zimo.demo.service;
 
-import com.zimo.demo.bean.Work;
-import com.zimo.demo.bean.WorkEnd;
-import com.zimo.demo.bean.WorkStart;
-import com.zimo.demo.bean.WorkTimeLimit;
+import com.zimo.demo.bean.*;
 import com.zimo.demo.mybatis.dao.*;
+import com.zimo.demo.util.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +44,9 @@ public class JonStartRun implements ApplicationRunner {
     @Autowired
     WorkTimeLimitMapper workTimeLimitMapper;
 
+    @Autowired
+    RedisUtil redisUtil;
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
         new Thread(() -> {
@@ -53,7 +54,7 @@ public class JonStartRun implements ApplicationRunner {
                 // 首次加载
                 if(!flag) {
                     logger.info(Thread.currentThread().getName() + "启动加载数据");
-                    List<WorkStart> workStarts = workStartMapper.findListBeforeTom();
+                    List<WorkStart> workStarts = workStartMapper.findListBeforeTom(new Date(new Date().getTime()+ 3600 * 1000 * 24));
                     for(WorkStart workStart: workStarts) {
                         workStart.setStartTimeLong(workStart.getStartTime().getTime());
                         queue.offer(workStart);
@@ -65,21 +66,32 @@ public class JonStartRun implements ApplicationRunner {
                         while(queue.size() != 0) {
                             try {
                                 WorkStart take = queue.take();
-                                // 修改状态为开始
-                                workTypeMapper.updateWorkByWorkId(take.getWorkId());
-                                // 删除表记录
+                                while(!redisUtil.lock("start")) {
+                                    logger.info("获取锁失败");
+                                }
+                                List<WorkType> list = workTypeMapper.selectIdByIdAndTypeNotStart(take.getWorkId());
+                                if(list.size() > 0) {
+                                    // 修改状态为开始
+                                    workTypeMapper.updateWorkByWorkId(take.getWorkId());
+                                    // 删除表记录
+
+                                    // 添加截止完成
+                                    Work work = workMapper.selectByPrimaryKey(take.getWorkId());
+                                    WorkEnd workEnd = new WorkEnd();
+                                    workEnd.setEndTime(work.getEndTime());
+                                    workEnd.setWorkId(work.getId());
+                                    workEndMapper.insert(workEnd);
+                                    workEnd.setEndTimeLong(workEnd.getEndTime().getTime());
+                                    workEndDelayQueue.put(workEnd);
+
+                                }
                                 workStartMapper.deleteByPrimaryKey(take.getId());
-                                // 添加截止完成
-                                Work work = workMapper.selectByPrimaryKey(take.getWorkId());
-                                WorkEnd workEnd = new WorkEnd();
-                                workEnd.setEndTime(work.getEndTime());
-                                workEnd.setWorkId(work.getId());
-                                workEndMapper.insert(workEnd);
-                                workEnd.setEndTimeLong(workEnd.getEndTime().getTime());
-                                workEndDelayQueue.put(workEnd);
                                 logger.info("修改，删除， 添加完成");
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
+                            } finally {
+                                redisUtil.unlock("start");
+                                logger.info("释放锁");
                             }
                         }
                         logger.info(Thread.currentThread().getName() + "暂时没有定时发布的job");
@@ -97,7 +109,8 @@ public class JonStartRun implements ApplicationRunner {
             while(true) {
                 if(!endFlag) {
                     logger.info(Thread.currentThread().getName() + "截止首次加载");
-                    List<WorkEnd> workEnds = workEndMapper.findListWorkBeforeTom();
+                    List<WorkEnd> workEnds = workEndMapper.findListWorkBeforeTom(new Date(new Date().getTime()+ 3600 * 1000 * 24));
+                    System.out.println(new Date().getTime() +  3600 * 100 * 24);
                     for (WorkEnd workEnd : workEnds) {
                         workEnd.setEndTimeLong(workEnd.getEndTime().getTime());
                         workEndDelayQueue.offer(workEnd);
@@ -110,13 +123,23 @@ public class JonStartRun implements ApplicationRunner {
                         while(workEndDelayQueue.size() != 0) {
                             try {
                                 WorkEnd take = workEndDelayQueue.take();
-                                // 修改状态
-                                workTypeMapper.updateWorkByEndTime(take.getWorkId());
-                                // 删除记录
+                                while(!redisUtil.lock("limit")) {
+                                    logger.info("获取锁失败");
+                                }
+                                List<WorkType> integers = workTypeMapper.selectIdByWorkAndIsNotFinish(take.getWorkId());
+                                if(integers.size() > 0) {
+                                    // 修改状态
+                                    workTypeMapper.updateWorkByEndTime(take.getWorkId());
+                                    // 删除记录
+
+                                }
                                 workEndMapper.deleteByPrimaryKey(take.getId());
                                 logger.info("修改， 删除 执行完毕");
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
+                            }finally {
+                                redisUtil.unlock("limit");
+                                logger.info("释放锁");
                             }
                         }
                         logger.info(Thread.currentThread().getName() + "暂时没有截止的job");
@@ -133,7 +156,7 @@ public class JonStartRun implements ApplicationRunner {
         new Thread(() -> {
             while(true) {
                 if(!limieFlag) {
-                    List<WorkTimeLimit> workTimeLimits = workTimeLimitMapper.findListBeforeTom();
+                    List<WorkTimeLimit> workTimeLimits = workTimeLimitMapper.findListBeforeTom(new Date(new Date().getTime()+ 3600 * 1000 * 24));
                     for (WorkTimeLimit workTimeLimit : workTimeLimits) {
                         workTimeLimit.setEndTimeLong(workTimeLimit.getEndTime().getTime());
                         workTimeLimitDelayQueue.offer(workTimeLimit);
@@ -146,12 +169,23 @@ public class JonStartRun implements ApplicationRunner {
                             WorkTimeLimit take = null;
                             try {
                                 take = workTimeLimitDelayQueue.take();
+                                while(!redisUtil.lock("end")) {
+                                    logger.info("获取锁失败");
+                                }
+                                List<WorkType> integers = workTypeMapper.selectWorkTypeById(take.getWorkId(), take.getStuId());
+                                if(integers.size() > 0) {
+                                    workTypeMapper.updateWorkTypeById(take.getWorkId(),take.getStuId(),3,null);
+
+                                }
+                                workTimeLimitMapper.deleteByWorkId(take.getWorkId(),take.getStuId());
+                                logger.info("修改，删除执行完毕");
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
+                            } finally {
+                                redisUtil.unlock("end");
+                                logger.info("释放锁");
                             }
-                            workTypeMapper.updateWorkTypeById(take.getWorkId(),take.getStuId(),3,null);
-                            workTimeLimitMapper.deleteByWorkId(take.getWorkId(),take.getStuId());
-                            logger.info("修改，删除执行完毕");
+
                         }
                         logger.info(Thread.currentThread().getName() + "暂时没有限时完成的job");
                         try {

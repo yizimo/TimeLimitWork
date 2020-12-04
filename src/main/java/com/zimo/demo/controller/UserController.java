@@ -30,13 +30,14 @@ public class UserController {
      */
     @RequestMapping(value = "/login",method = RequestMethod.GET)
     public ResultBody isLogin(@RequestParam(value = "username") String username,
-                                  @RequestParam(value = "password") String password) {
-        logger.info("username:" + username + (username.length()== 0) + ",password:" + password);
-        Msg msg = userService.isLogin(username, password);
-        if(200 == msg.getCode()) {
-            return ResultBody.error("-1",msg.getExtend().get("info").toString());
-        }
-        return ResultBody.success(msg.getExtend());
+                                  @RequestParam(value = "password") String password) throws Exception {
+        throw new Exception("123");
+//        logger.info("username:" + username + (username.length()== 0) + ",password:" + password);
+//        Msg msg = userService.isLogin(username, password);
+//        if(200 == msg.getCode()) {
+//            return ResultBody.error("-1",msg.getExtend().get("info").toString());
+//        }
+//        return ResultBody.success(msg.getExtend());
     }
 
 

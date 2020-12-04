@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class RedisUtil {
@@ -80,5 +81,16 @@ public class RedisUtil {
     public Long zsetRemove(String key, Long time) {
         Long aLong = redisTemplate.opsForZSet().removeRangeByScore(key, 0, time);
         return aLong;
+    }
+
+    public boolean lock(String str) {
+        if(redisTemplate.opsForValue().setIfAbsent(str,"value",2*1000, TimeUnit.MILLISECONDS)) {
+            return true;
+        }
+        return false;
+    }
+
+    public void unlock(String key) {
+        redisTemplate.delete(key);
     }
 }

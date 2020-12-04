@@ -115,23 +115,26 @@ public class Job {
         // queue 清空
         JonStartRun.queue.clear();
         // 补充数据
-        List<WorkStart> workStarts = workStartMapper.findListBeforeTom();
+        long time = new Date().getTime() + 3600000 + 3600000 * 24;
+        List<WorkStart> workStarts = workStartMapper.findListBeforeTom(new Date(time));
         for(WorkStart workStart: workStarts) {
             workStart.setStartTimeLong(workStart.getStartTime().getTime());
             JonStartRun.queue.offer(workStart);
         }
         JonStartRun.workEndDelayQueue.clear();
-        List<WorkEnd> workEnds = workEndMapper.findListWorkBeforeTom();
+        List<WorkEnd> workEnds = workEndMapper.findListWorkBeforeTom(new Date(time));
         for (WorkEnd workEnd : workEnds) {
             workEnd.setEndTimeLong(workEnd.getEndTime().getTime());
             JonStartRun.workEndDelayQueue.offer(workEnd);
         }
         JonStartRun.workTimeLimitDelayQueue.clear();
-        List<WorkTimeLimit> workTimeLimits = workTimeLimitMapper.findListBeforeTom();
+        List<WorkTimeLimit> workTimeLimits = workTimeLimitMapper.findListBeforeTom(new Date(time));
         for (WorkTimeLimit workTimeLimit : workTimeLimits) {
             workTimeLimit.setEndTimeLong(workTimeLimit.getEndTime().getTime());
             JonStartRun.workTimeLimitDelayQueue.offer(workTimeLimit);
         }
 
     }
+
+
 }

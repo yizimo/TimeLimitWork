@@ -62,8 +62,10 @@ public class WorkService {
         workStart.setWorkId(work.getId());
         workStart.setStartTimeLong(workStart.getStartTime().getTime());
         workStartMapper.insert(workStart);
-        JonStartRun.queue.offer(workStart);
-        logger.info("workStart:" + workStart.getId());
+        if(work.getEndTime().getTime() < (new Date().getTime() + 3600 * 1000 * 24)) {
+            JonStartRun.queue.offer(workStart);
+        }
+        logger.info("workStart:" + workStart.getId() + "queue size is " + JonStartRun.queue.size());
         TaskResource taskResource = new TaskResource();
         taskResource.setTaskInfo(receive.getTaskResourceInfo());
         taskResource.setWorkId(work.getId());
@@ -136,6 +138,10 @@ public class WorkService {
         if(date == null || id == null) {
             return Msg.fail();
         }
+        List<WorkType> list = workTypeMapper.selectStartTimeById(id);
+        if(list.size() == 0) {
+            return Msg.success();
+        }
         // 更新开始时间
         WorkType workType = new WorkType();
         workType.setStartTime(date);
@@ -196,6 +202,7 @@ public class WorkService {
             }
         } else {
             WorkType workType = workTypeMapper.findByWorkIdAndStuId(workId, stuId);
+            logger.info(workType.toString());
             long endTimeByWorkType = workType.getStartTime().getTime() + work.getTimeLong();
             endTimeByWorkType = Math.min(endTimeByWorkType,work.getEndTime().getTime());
             if(endTimeByWorkType + 1000 > endTime.getTime()) {
